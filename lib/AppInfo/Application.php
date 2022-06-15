@@ -78,7 +78,7 @@ class Application extends App {
 	 */
 	private function getRedirectUrl($username) {
 		$args = $username !== null ? ['user' => $username] : [];
-		$redirectUrl .= $this->request->getServerProtocol() . '://';
+		$redirectUrl = $this->request->getServerProtocol() . '://';
 		$redirectUrl .= $this->request->getServerHost();
 		$redirectUrl .= $this->urlGenerator->linkToRoute('core.login.showLoginForm', $args);
 		return $redirectUrl;
