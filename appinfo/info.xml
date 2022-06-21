@@ -6,7 +6,7 @@
     <namespace>LoginCaptcha</namespace>
     <summary>Add captcha on login page</summary>
     <description>A simple captcha for login form. To be able to login, the user is required to enter correct captcha code.</description>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <licence>agpl</licence>
     <author>ossii</author>
     <website>https://www.ossii.com.tw/</website>
