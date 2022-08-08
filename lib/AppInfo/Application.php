@@ -2,86 +2,44 @@
 namespace OCA\LoginCaptcha\AppInfo;
 
 use OCP\AppFramework\App;
-use OCP\ISession;
-use OCP\IRequest;
-use OCP\IURLGenerator;
+use OCP\AppFramework\Bootstrap\IBootContext;
+use OCP\AppFramework\Bootstrap\IBootstrap;
+use OCP\AppFramework\Bootstrap\IRegistrationContext;
+
 use OCP\User\Events\BeforeUserLoggedInEvent;
+use OCA\LoginCaptcha\Listener\BeforeUserLoggedInEventListener;
 
-class Application extends App {
+class Application extends App implements IBootstrap {
 
-	const APPNAME = 'logincaptcha';
+	const APP_NAME = 'logincaptcha';
+
 	const CAPTCHA_NAME = 'login_captcha_code';
 	const CAPTCHA_FAILED_NAME = 'login_cpatcha_failed';
 
 	public function __construct() {
-		parent::__construct(self::APPNAME);
-		$this->session = \OC::$server->getSession();
-		$this->request = \OC::$server->getRequest();
-		$this->urlGenerator = \OC::$server->getURLGenerator();
+		parent::__construct(self::APP_NAME);
 	}
 
-	public function registerListener() {
-		$eventDispatcher = \OC::$server->getEventDispatcher();
-		$eventDispatcher->addListener(BeforeUserLoggedInEvent::class, function($event) {
-			try {
-				$this->validate();
-			} catch (\Exception $e) {
-				header('Location:' . $this->getRedirectUrl($event->getUsername()));
-				exit;
+	public function register(IRegistrationContext $context): void {
+
+		$context->registerEventListener(BeforeUserLoggedInEvent::class, BeforeUserLoggedInEventListener::class);
+
+		$request = \OC::$server->getRequest();
+		if (isset($request->server['REQUEST_URI'])) {
+			$url = $request->server['REQUEST_URI'];
+			if (preg_match('%/login(\?.+)?$%m', $url)) {
+				\OCP\Util::addScript(self::APP_NAME, 'main');
+				\OCP\Util::addStyle(self::APP_NAME, 'main');
 			}
-
-		});
-	}
-
-	/**
-	 * 取得驗證結果
-	 */
-	public function showErrorMsg() {
-		return $this->session->get(self::CAPTCHA_FAILED_NAME);
-	}
-
-	/**
-	 * 移除驗證結果
-	 */
-	public function removeSession() {
-		$this->session->remove(self::CAPTCHA_FAILED_NAME);
-	}
-
-	/**
-	 * 檢查驗證碼
-	 *
-	 * @NoCSRFRequired
-	 * @PublicPage
-     * @UseSession
-	 *
-	 * @throws \Exception
-	 */
-	private function validate() {
-		$captcha = $this->request->getParam('captcha', '');
-		$savedCaptcha = $this->session->get(self::CAPTCHA_NAME);
-		$isOK = (strtolower($savedCaptcha) == strtolower(trim($captcha)));
-		if (!$isOK) {
-			$this->session->set(self::CAPTCHA_FAILED_NAME, true);
-			throw new \Exception('captcha');
 		}
 	}
 
-	/**
-	 * 驗證無效，重新導向登入頁面
-	 *
-	 * @NoCSRFRequired
-	 * @PublicPage
-     * @UseSession
-	 *
-	 * @param string $username
-	 * @return string
-	 */
-	private function getRedirectUrl($username) {
-		$args = $username !== null ? ['user' => $username] : [];
-		$redirectUrl = $this->request->getServerProtocol() . '://';
-		$redirectUrl .= $this->request->getServerHost();
-		$redirectUrl .= $this->urlGenerator->linkToRoute('core.login.showLoginForm', $args);
-		return $redirectUrl;
+	public function boot(IBootContext $context): void {
+		$session = \OC::$server->getSession();
+		$cpatchaFail = $session->get(self::CAPTCHA_FAILED_NAME);
+		if ($cpatchaFail) {
+			\OCP\Util::addScript(self::APP_NAME, 'error');
+			$session->remove(self::CAPTCHA_FAILED_NAME);
+		}
 	}
-
 }
