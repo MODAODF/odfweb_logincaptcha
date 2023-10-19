@@ -8,7 +8,7 @@ window.addEventListener('DOMContentLoaded', function() {
             autocomplete="off" autocapitalize="none" autocorrect="off" required>
         <label for="password" class="infield">${t(APP_NAME, 'Captcha')}</label>
         <a>
-            <img id="imgcode" src="" title="${t(APP_NAME, 'Click to refresh captcha')}"/>
+            <img id="imgcode" src="" alt="${t(APP_NAME, 'Click to refresh captcha')}" title="${t(APP_NAME, 'Click to refresh captcha')}"/>
         </a>
     </p>`;
 
